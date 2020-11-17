@@ -205,7 +205,7 @@ const BlockInfo UBOMorph::BLOCK = {
 
 const SamplerInfo UNIFORM_SHADOWMAP = {
     {
-        LOCAL_SET,
+        GLOBAL_SET,
         static_cast<uint>(PipelineGlobalBindings::SAMPLER_SHADOWMAP),
         "cc_shadowMap",
         gfx::Type::SAMPLER2D,
@@ -221,7 +221,7 @@ const SamplerInfo UNIFORM_SHADOWMAP = {
 
 const SamplerInfo UNIFORM_ENVIRONMENT = {
     {
-        LOCAL_SET,
+        GLOBAL_SET,
         static_cast<uint>(PipelineGlobalBindings::SAMPLER_ENVIRONMENT),
         "cc_environment",
         gfx::Type::SAMPLER_CUBE,
