@@ -124,6 +124,28 @@ const BlockInfo UBOForwardLight::BLOCK = {
     },
 };
 
+const BlockInfo UBODeferredLight::BLOCK = {
+    {
+        LOCAL_SET,
+        static_cast<uint>(ModelLocalBindings::UBO_DEFERRED_LIGHTS),
+        "CCDeferredLight",
+        {
+            {"cc_lightPos", gfx::Type::FLOAT4, static_cast<uint>(UBODeferredLight::LIGHTS_PER_PASS)},
+            {"cc_lightColor", gfx::Type::FLOAT4, static_cast<uint>(UBODeferredLight::LIGHTS_PER_PASS)},
+            {"cc_lightSizeRangeAngle", gfx::Type::FLOAT4, static_cast<uint>(UBODeferredLight::LIGHTS_PER_PASS)},
+            {"cc_lightDir", gfx::Type::FLOAT4, static_cast<uint>(UBODeferredLight::LIGHTS_PER_PASS)},
+            {"cc_lightCnt", gfx::Type::FLOAT4, 1},
+        },
+        1,
+    },
+    {
+        static_cast<uint>(ModelLocalBindings::UBO_DEFERRED_LIGHTS),
+        gfx::DescriptorType::DYNAMIC_UNIFORM_BUFFER,
+        1,
+        gfx::ShaderStageFlagBit::FRAGMENT,
+    },
+};
+
 const BlockInfo UBOSkinningTexture::BLOCK = {
     {
         LOCAL_SET,
@@ -229,6 +251,86 @@ const SamplerInfo UNIFORM_ENVIRONMENT = {
     },
     {
         static_cast<uint>(PipelineGlobalBindings::SAMPLER_ENVIRONMENT),
+        gfx::DescriptorType::SAMPLER,
+        1,
+        gfx::ShaderStageFlagBit::FRAGMENT,
+    },
+};
+
+const SamplerInfo GBUFFER_ALBEDOM = {
+    {
+        GLOBAL_SET,
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_ALBEDOMAP),
+        "cc_gbuffer_albedoMap",
+        gfx::Type::SAMPLER2D,
+        1,
+    },
+    {
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_ALBEDOMAP),
+        gfx::DescriptorType::SAMPLER,
+        1,
+        gfx::ShaderStageFlagBit::FRAGMENT,
+    },
+};
+
+const SamplerInfo GBUFFER_POSITION = {
+    {
+        GLOBAL_SET,
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_POSITIONMAP),
+        "cc_gbuffer_positionMap",
+        gfx::Type::SAMPLER2D,
+        1,
+    },
+    {
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_POSITIONMAP),
+        gfx::DescriptorType::SAMPLER,
+        1,
+        gfx::ShaderStageFlagBit::FRAGMENT,
+    },
+};
+
+const SamplerInfo GBUFFER_NORMAL = {
+    {
+        GLOBAL_SET,
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_NORMALMAP),
+        "cc_gbuffer_normalMap",
+        gfx::Type::SAMPLER2D,
+        1,
+    },
+    {
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_NORMALMAP),
+        gfx::DescriptorType::SAMPLER,
+        1,
+        gfx::ShaderStageFlagBit::FRAGMENT,
+    },
+};
+
+const SamplerInfo GBUFFER_EMISSIVE = {
+    {
+        GLOBAL_SET,
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_EMISSIVEMAP),
+        "cc_gbuffer_emissiveMap",
+        gfx::Type::SAMPLER2D,
+        1,
+    },
+    {
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_EMISSIVEMAP),
+        gfx::DescriptorType::SAMPLER,
+        1,
+        gfx::ShaderStageFlagBit::FRAGMENT,
+    },
+};
+
+const SamplerInfo RESULT_MAP = {
+    {
+        GLOBAL_SET,
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP),
+        "cc_lighting_resultMap",
+        gfx::Type::SAMPLER2D,
+        1,
+    },
+    {
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP),
         gfx::DescriptorType::SAMPLER,
         1,
         gfx::ShaderStageFlagBit::FRAGMENT,

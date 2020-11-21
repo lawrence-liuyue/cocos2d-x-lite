@@ -149,6 +149,11 @@ enum class CC_DLL PipelineGlobalBindings {
     UBO_SHADOW,
 
     SAMPLER_SHADOWMAP,
+    SAMPLER_GBUFFER_ALBEDOMAP,
+    SAMPLER_GBUFFER_POSITIONMAP,
+    SAMPLER_GBUFFER_NORMALMAP,
+    SAMPLER_GBUFFER_EMISSIVEMAP,
+    SAMPLER_LIGHTING_RESULTMAP,
     SAMPLER_ENVIRONMENT, // don't put this as the first sampler binding due to Mac GL driver issues: cubemap at texture unit 0 causes rendering issues
 
     COUNT,
@@ -168,6 +173,7 @@ enum class CC_DLL ModelLocalBindings {
     SAMPLER_LIGHTMAP,
     SAMPLER_SPRITE,
     SAMPLER_SPOT_LIGHTING_MAP,
+    UBO_DEFERRED_LIGHTS,
 
     COUNT,
 };
@@ -208,6 +214,18 @@ struct CC_DLL UBOForwardLight {
     static constexpr uint LIGHT_DIR_OFFSET = UBOForwardLight::LIGHT_SIZE_RANGE_ANGLE_OFFSET + UBOForwardLight::LIGHTS_PER_PASS * 4;
     static constexpr uint COUNT = UBOForwardLight::LIGHT_DIR_OFFSET + UBOForwardLight::LIGHTS_PER_PASS * 4;
     static constexpr uint SIZE = UBOForwardLight::COUNT * 4;
+
+    static const BlockInfo BLOCK;
+};
+
+struct CC_DLL UBODeferredLight {
+    static constexpr uint LIGHTS_PER_PASS = 20;
+    static constexpr uint LIGHT_POS_OFFSET = 0;
+    static constexpr uint LIGHT_COLOR_OFFSET = UBODeferredLight::LIGHT_POS_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint LIGHT_SIZE_RANGE_ANGLE_OFFSET = UBODeferredLight::LIGHT_COLOR_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint LIGHT_DIR_OFFSET = UBODeferredLight::LIGHT_SIZE_RANGE_ANGLE_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint COUNT = UBODeferredLight::LIGHT_DIR_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint SIZE = UBODeferredLight::COUNT * 4;
 
     static const BlockInfo BLOCK;
 };
@@ -262,6 +280,21 @@ enum class CC_DLL RenderFlowTag {
     SCENE,
     POSTPROCESS,
     UI,
+};
+
+enum class CC_DLL DeferredStagePriority {
+    GBUFFER = 10,
+    LIGHTING = 15,
+    TRANSPARANT = 18,
+    COPY = 19,
+    UI = 20
+};
+
+enum class CC_DLL DefferredFlowPriority {
+    SHADOW = 0,
+    GBUFFER = 1,
+    LIGHTING = 5,
+    UI = 10
 };
 
 struct CC_DLL UBOGlobal : public Object {
@@ -350,6 +383,10 @@ extern CC_DLL DescriptorSetLayoutInfos globalDescriptorSetLayout;
 extern CC_DLL DescriptorSetLayoutInfos localDescriptorSetLayout;
 extern CC_DLL const SamplerInfo UNIFORM_SHADOWMAP;
 extern CC_DLL const SamplerInfo UNIFORM_ENVIRONMENT;
+extern CC_DLL const SamplerInfo GBUFFER_ALBEDO;
+extern CC_DLL const SamplerInfo GBUFFER_POSITION;
+extern CC_DLL const SamplerInfo GBUFFER_NORMAL;
+extern CC_DLL const SamplerInfo GBUFFER_EMISSIVE;
 extern CC_DLL const SamplerInfo UniformJointTexture;
 extern CC_DLL const SamplerInfo UniformPositionMorphTexture;
 extern CC_DLL const SamplerInfo UniformNormalMorphTexture;

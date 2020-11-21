@@ -17,7 +17,7 @@ RenderPipeline *RenderPipeline::getInstance() {
 RenderPipeline::RenderPipeline()
 : _device(gfx::Device::getInstance()) {
     RenderPipeline::_instance = this;
-    
+
     setDescriptorSetLayout();
 }
 
@@ -30,7 +30,7 @@ void RenderPipeline::setDescriptorSetLayout() {
     globalDescriptorSetLayout.bindings[UBOShadow::BLOCK.layout.binding] = UBOShadow::BLOCK.bindings;
     globalDescriptorSetLayout.bindings[UNIFORM_SHADOWMAP.layout.binding] = UNIFORM_SHADOWMAP.bindings;
     globalDescriptorSetLayout.bindings[UNIFORM_ENVIRONMENT.layout.binding] = UNIFORM_ENVIRONMENT.bindings;
-    
+
     localDescriptorSetLayout.bindings.resize(static_cast<size_t>(ModelLocalBindings::COUNT));
     localDescriptorSetLayout.bindings[UBOLocal::BLOCK.layout.binding] = UBOLocal::BLOCK.bindings;
     localDescriptorSetLayout.bindings[UBOLocalBatched::BLOCK.layout.binding] = UBOLocalBatched::BLOCK.bindings;
@@ -39,7 +39,7 @@ void RenderPipeline::setDescriptorSetLayout() {
     localDescriptorSetLayout.bindings[UBOSkinningAnimation::BLOCK.layout.binding] = UBOSkinningAnimation::BLOCK.bindings;
     localDescriptorSetLayout.bindings[UBOSkinning::BLOCK.layout.binding] = UBOSkinning::BLOCK.bindings;
     localDescriptorSetLayout.bindings[UBOMorph::BLOCK.layout.binding] = UBOMorph::BLOCK.bindings;
-    
+
     localDescriptorSetLayout.bindings[UniformJointTexture.layout.binding] = UniformJointTexture.bindings;
     localDescriptorSetLayout.bindings[UniformPositionMorphTexture.layout.binding] = UniformPositionMorphTexture.bindings;
     localDescriptorSetLayout.bindings[UniformNormalMorphTexture.layout.binding] = UniformNormalMorphTexture.bindings;
