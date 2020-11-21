@@ -149,6 +149,11 @@ enum class CC_DLL PipelineGlobalBindings {
     UBO_SHADOW,
 
     SAMPLER_SHADOWMAP,
+    SAMPLER_GBUFFER_ALBEDOMAP,
+    SAMPLER_GBUFFER_POSITIONMAP,
+    SAMPLER_GBUFFER_NORMALMAP,
+    SAMPLER_GBUFFER_EMISSIVEMAP,
+    SAMPLER_LIGHTING_RESULTMAP,
     SAMPLER_ENVIRONMENT, // don't put this as the first sampler binding due to Mac GL driver issues: cubemap at texture unit 0 causes rendering issues
     SAMPLER_SPOT_LIGHTING_MAP,
 
@@ -168,6 +173,7 @@ enum class CC_DLL ModelLocalBindings {
     SAMPLER_MORPH_TANGENT,
     SAMPLER_LIGHTMAP,
     SAMPLER_SPRITE,
+    UBO_DEFERRED_LIGHTS,
 
     COUNT,
 };
@@ -207,6 +213,18 @@ struct CC_DLL UBOForwardLight {
     static const gfx::DescriptorSetLayoutBinding DESCRIPTOR;
     static const gfx::UniformBlock LAYOUT;
     static const String NAME;
+};
+
+struct CC_DLL UBODeferredLight {
+    static constexpr uint LIGHTS_PER_PASS = 20;
+    static constexpr uint LIGHT_POS_OFFSET = 0;
+    static constexpr uint LIGHT_COLOR_OFFSET = UBODeferredLight::LIGHT_POS_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint LIGHT_SIZE_RANGE_ANGLE_OFFSET = UBODeferredLight::LIGHT_COLOR_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint LIGHT_DIR_OFFSET = UBODeferredLight::LIGHT_SIZE_RANGE_ANGLE_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint COUNT = UBODeferredLight::LIGHT_DIR_OFFSET + UBODeferredLight::LIGHTS_PER_PASS * 4;
+    static constexpr uint SIZE = UBODeferredLight::COUNT * 4;
+
+    static const BlockInfo BLOCK;
 };
 
 struct CC_DLL UBOSkinningTexture {
@@ -268,6 +286,21 @@ enum class CC_DLL RenderFlowTag {
     SCENE,
     POSTPROCESS,
     UI,
+};
+
+enum class CC_DLL DeferredStagePriority {
+    GBUFFER = 10,
+    LIGHTING = 15,
+    TRANSPARANT = 18,
+    COPY = 19,
+    UI = 20
+};
+
+enum class CC_DLL DefferredFlowPriority {
+    SHADOW = 0,
+    GBUFFER = 1,
+    LIGHTING = 5,
+    UI = 10
 };
 
 struct CC_DLL UBOGlobal : public Object {
@@ -422,5 +455,6 @@ struct CC_DLL SPRITE_TEXTURE : public Object {
     static const gfx::UniformSampler LAYOUT;
     static const String NAME;
 };
+
 } // namespace pipeline
 } // namespace cc
