@@ -31,7 +31,7 @@ void LinearToSRGB(gfx::Color &out, const gfx::Color &linear) {
 
 RenderStageInfo GBufferStage::_initInfo = {
     "GBufferStage",
-    static_cast<uint>(GBufferStagePriority::FORWARD),
+    static_cast<uint>(DeferredStagePriority::GBUFFER),
     static_cast<uint>(RenderFlowTag::SCENE),
     {{false, RenderQueueSortMode::FRONT_TO_BACK, {"default"}},
      {true, RenderQueueSortMode::BACK_TO_FRONT, {"default", "planarShadow"}}}};

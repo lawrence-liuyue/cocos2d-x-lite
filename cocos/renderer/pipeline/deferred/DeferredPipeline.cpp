@@ -2,7 +2,6 @@
 #include "../RenderView.h"
 #include "../shadow/ShadowFlow.h"
 #include "../ui/UIFlow.h"
-#include "ForwardFlow.h"
 #include "SceneCulling.h"
 #include "gfx/GFXBuffer.h"
 #include "gfx/GFXCommandBuffer.h"
@@ -28,13 +27,22 @@ namespace {
     dst[offset + 3] = src.w;
 } // namespace
 
+#define INIT_GLOBAL_DESCSET_LAYOUT(info)                                    \
+while (1) {                                                                 \
+    globalDescriptorSetLayout.samplers[info::NAME] = info::LAYOUT;          \
+    globalDescriptorSetLayout.bindings[info::BINDING] = info::DESCRIPTOR;   \
+}
+
 DeferredPipeline::DeferredPipeline()
 : RenderPipeline() {
-    globalDescriptorSetLayout.bindings[GBUFFER_ALBEDOM.layout.binding] = GBUFFER_ALBEDOM.bindings;
-    globalDescriptorSetLayout.bindings[GBUFFER_POSITION.layout.binding] = GBUFFER_POSITION.bindings;
-    globalDescriptorSetLayout.bindings[GBUFFER_EMISSIVE.layout.binding] = GBUFFER_EMISSIVE.bindings;
-    globalDescriptorSetLayout.bindings[GBUFFER_NORMAL.layout.binding] = GBUFFER_NORMAL.bindings;
-    localDescriptorSetLayout.bindings[UBODeferredLight::BLOCK.layout.binding] = UBODeferredLight::BLOCK.bindings;
+
+    INIT_GLOBAL_DESCSET_LAYOUT(SAMPLERGBUFFERALBEDOMAP);
+    INIT_GLOBAL_DESCSET_LAYOUT(SAMPLERGBUFFERPOSITIONMAP);
+    INIT_GLOBAL_DESCSET_LAYOUT(SAMPLERGBUFFEREMISSIVEMAP);
+    INIT_GLOBAL_DESCSET_LAYOUT(SAMPLERGBUFFERNORMALMAP);
+
+    localDescriptorSetLayout.blocks[UBODeferredLight::NAME] = UBODeferredLight::LAYOUT;
+    localDescriptorSetLayout.bindings[UBODeferredLight::BINDING] = UBODeferredLight::DESCRIPTOR;
 }
 
 gfx::RenderPass *DeferredPipeline::getOrCreateRenderPass(gfx::ClearFlags clearFlags) {
@@ -84,29 +92,29 @@ void DeferredPipeline::setSkybox(uint skybox) {
     _skybox = GET_SKYBOX(skybox);
 }
 
-void DeferredPipeline::setShadows(uint shadows) {
-    _shadows = GET_SHADOWS(shadows);
-}
+//void DeferredPipeline::setShadows(uint shadows) {
+//    _shadows = GET_SHADOWS(shadows);
+//}
 
 bool DeferredPipeline::initialize(const RenderPipelineInfo &info) {
     RenderPipeline::initialize(info);
 
     if (_flows.size() == 0) {
-        auto shadowFlow = CC_NEW(ShadowFlow);
-        shadowFlow->initialize(ShadowFlow::getInitializeInfo());
-        _flows.emplace_back(shadowFlow);
+        //auto shadowFlow = CC_NEW(ShadowFlow);
+        //shadowFlow->initialize(ShadowFlow::getInitializeInfo());
+        //_flows.emplace_back(shadowFlow);
 
-        auto gbufferFlow = CC_NEW(GBufferFlow);
-        gbufferFlow->initialize();
-        _flows.emplace_back(gbufferFlow);
+        //auto gbufferFlow = CC_NEW(GBufferFlow);
+        //gbufferFlow->initialize();
+        //_flows.emplace_back(gbufferFlow);
 
-        auto lightingFlow = CC_NEW(LightingFlow);
-        lightingFlow->initialize();
-        _flows.emplace_back(lightingFlow);
+        //auto lightingFlow = CC_NEW(LightingFlow);
+        //lightingFlow->initialize();
+        //_flows.emplace_back(lightingFlow);
 
-        auto uiFlow = CC_NEW(UIFlow);
-        uiFlow->initialize(UIFlow::getInitializeInfo());
-        _flows.emplace_back(uiFlow);
+        //auto uiFlow = CC_NEW(UIFlow);
+        //uiFlow->initialize(UIFlow::getInitializeInfo());
+        //_flows.emplace_back(uiFlow);
     }
     _sphere = CC_NEW(Sphere);
 
@@ -149,7 +157,7 @@ void DeferredPipeline::updateUBOs(RenderView *view) {
 
     if (mainLight && shadowInfo->getShadowType() == ShadowType::SHADOWMAP) {
         if (_shadowFrameBufferMap.count(mainLight)) {
-            _descriptorSet->bindTexture(UNIFORM_SHADOWMAP.layout.binding, _shadowFrameBufferMap[mainLight]->getColorTextures()[0]);
+            _descriptorSet->bindTexture(SHADOWMAP::BINDING, _shadowFrameBufferMap[mainLight]->getColorTextures()[0]);
         }
 
         const auto node = mainLight->getNode();
@@ -190,8 +198,8 @@ void DeferredPipeline::updateUBOs(RenderView *view) {
     }
 
     // update ubos
-    _commandBuffers[0]->updateBuffer(_descriptorSet->getBuffer(UBOGlobal::BLOCK.layout.binding), _globalUBO.data(), UBOGlobal::SIZE);
-    _commandBuffers[0]->updateBuffer(_descriptorSet->getBuffer(UBOShadow::BLOCK.layout.binding), _shadowUBO.data(), UBOShadow::SIZE);
+    _commandBuffers[0]->updateBuffer(_descriptorSet->getBuffer(UBOGlobal::BINDING), _globalUBO.data(), UBOGlobal::SIZE);
+    _commandBuffers[0]->updateBuffer(_descriptorSet->getBuffer(UBOShadow::BINDING), _shadowUBO.data(), UBOShadow::SIZE);
 }
 
 void DeferredPipeline::updateUBO(RenderView *view) {
@@ -300,10 +308,10 @@ void DeferredPipeline::updateUBO(RenderView *view) {
 
 bool DeferredPipeline::createQuadInputAssembler() {
     // step 1 create vertex buffer
-    int vbStride = sizeof(float) * 4;
-    int vbSize = vbStride * 4;
+    uint vbStride = sizeof(float) * 4;
+    uint vbSize = vbStride * 4;
     _quadVB = _device->createBuffer({gfx::BufferUsageBit::VERTEX | gfx::BufferUsageBit::TRANSFER_DST,
-              gfx::BufferUsageBit::HOST | gfx::MemoryUsageBit::DEVICE, vbSize, vbStride});
+              gfx::MemoryUsageBit::HOST | gfx::MemoryUsageBit::DEVICE, vbSize, vbStride});
     if (!_quadVB) {
         return false;
     }
@@ -321,21 +329,21 @@ bool DeferredPipeline::createQuadInputAssembler() {
     _quadVB->update(vbData, 0 ,sizeof(vbData));
 
     // step 2 create index buffer
-    int ibStride = 1;
-    int ibSize = ibStride * 6;
+    uint ibStride = 1;
+    uint ibSize = ibStride * 6;
 
     _quadIB =_device->createBuffer({gfx::BufferUsageBit::INDEX | gfx::BufferUsageBit::TRANSFER_DST,
-             gfx::BufferUsageBit::HOST | gfx::MemoryUsageBit::DEVICE, ibSize, ibStrid});
+             gfx::MemoryUsageBit::HOST | gfx::MemoryUsageBit::DEVICE, ibSize, ibStride});
 
     if (!_quadIB) {
         return false;
     }
 
-    unsigned char ibData = {0, 1, 2, 1, 3, 2};
-    _quabIB->update(ibData, 0, sizeof(ibData));
+    unsigned char ibData[] = {0, 1, 2, 1, 3, 2};
+    _quadIB->update(ibData, 0, sizeof(ibData));
 
     // step 3 create input assembler
-    InputAssemblerInfo info;
+    gfx::InputAssemblerInfo info;
     info.attributes.push_back({"a_position", gfx::Format::RG32F});
     info.attributes.push_back({"a_texCoord", gfx::Format::RG32F});
     info.vertexBuffers.push_back(_quadVB);
@@ -348,7 +356,7 @@ bool DeferredPipeline::createQuadInputAssembler() {
     return true;
 }
 
-void DeferredPipeline:destroyQuadInputAssembler() {
+void DeferredPipeline::destroyQuadInputAssembler() {
     if (_quadVB) {
         _quadVB->destroy();
         _quadVB = nullptr;
@@ -378,7 +386,7 @@ bool DeferredPipeline::activeRenderer() {
         UBOGlobal::SIZE,
         gfx::BufferFlagBit::NONE,
     });
-    _descriptorSet->bindBuffer(UBOGlobal::BLOCK.layout.binding, globalUBO);
+    _descriptorSet->bindBuffer(UBOGlobal::BINDING, globalUBO);
 
     auto shadowUBO = _device->createBuffer({
         gfx::BufferUsageBit::UNIFORM | gfx::BufferUsageBit::TRANSFER_DST,
@@ -387,7 +395,7 @@ bool DeferredPipeline::activeRenderer() {
         UBOShadow::SIZE,
         gfx::BufferFlagBit::NONE,
     });
-    _descriptorSet->bindBuffer(UBOShadow::BLOCK.layout.binding, shadowUBO);
+    _descriptorSet->bindBuffer(UBOShadow::BINDING, shadowUBO);
 
     // update global defines when all states initialized.
     _macros.setValue("CC_USE_HDR", _isHDR);
@@ -404,8 +412,8 @@ void DeferredPipeline::destroy() {
     destroyQuadInputAssembler();
 
     if (_descriptorSet) {
-        _descriptorSet->getBuffer(UBOGlobal::BLOCK.layout.binding)->destroy();
-        _descriptorSet->getBuffer(UBOShadow::BLOCK.layout.binding)->destroy();
+        _descriptorSet->getBuffer(UBOGlobal::BINDING)->destroy();
+        _descriptorSet->getBuffer(UBOShadow::BINDING)->destroy();
     }
 
     for (auto &it : _renderPasses) {

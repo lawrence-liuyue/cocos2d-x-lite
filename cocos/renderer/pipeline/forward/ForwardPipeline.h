@@ -33,7 +33,7 @@ public:
     void setFog(uint);
     void setAmbient(uint);
     void setSkybox(uint);
-    void setShadows(uint);
+    //void setShadows(uint);
 
     std::unordered_map<const Light *, gfx::Framebuffer *> &getShadowFramebuffer() { return _shadowFrameBufferMap; }
 
@@ -51,7 +51,7 @@ public:
     CC_INLINE const Fog *getFog() const { return _fog; }
     CC_INLINE const Ambient *getAmbient() const { return _ambient; }
     CC_INLINE const Skybox *getSkybox() const { return _skybox; }
-    CC_INLINE Shadows *getShadows() const { return _shadows; }
+    //CC_INLINE Shadows *getShadows() const { return _shadows; }
     CC_INLINE Sphere *getSphere() const { return _sphere; }
     CC_INLINE std::array<float, UBOShadow::COUNT> getShadowUBO() const { return _shadowUBO; }
 
@@ -66,7 +66,7 @@ private:
     const Fog *_fog = nullptr;
     const Ambient *_ambient = nullptr;
     const Skybox *_skybox = nullptr;
-    Shadows *_shadows = nullptr;
+    //Shadows *_shadows = nullptr;
     gfx::Buffer *_lightsUBO = nullptr;
     LightList _validLights;
     gfx::BufferList _lightBuffers;

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "../RenderFlow.h"
+#include "../../core/gfx/GfxRenderPass.h"
 
 namespace cc {
 namespace pipeline {
 
 class RenderView;
 class GBufferStage;
-class gfx::RenderPass;
 
 class GBufferFlow : public RenderFlow {
 public:
@@ -22,8 +22,8 @@ public:
     virtual void render(RenderView *view) override;
 
 private:
-    void createRenderPass(gfx::device *device);
-    void createRenderTargets(gfx::device *device);
+    void createRenderPass(gfx::Device *device);
+    void createRenderTargets(gfx::Device *device);
 
 private:
     static RenderFlowInfo _initInfo;
@@ -32,8 +32,8 @@ private:
     gfx::TextureList _gbufferRenderTargets;
     gfx::Framebuffer *_gbufferFrameBuffer = nullptr;
     gfx::Texture *_depth = nullptr;
-    int _width;
-    int _height;
+    uint _width;
+    uint _height;
 
     GBufferStage *_GBufferStage = nullptr;
 };

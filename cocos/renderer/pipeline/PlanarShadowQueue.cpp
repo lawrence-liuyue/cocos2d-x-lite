@@ -20,7 +20,7 @@ namespace cc {
 namespace pipeline {
 
 PlanarShadowQueue::PlanarShadowQueue(RenderPipeline *pipeline)
-:_pipeline(static_cast<ForwardPipeline *>(pipeline)){
+:_pipeline(pipeline){
     _instancedQueue = CC_NEW(RenderInstancedQueue);
 }
 
@@ -34,7 +34,7 @@ void PlanarShadowQueue::gatherShadowPasses(RenderView *view, gfx::CommandBuffer 
     const bool shadowVisible = view->getVisibility() & static_cast<uint>(LayerList::DEFAULT);
 
     if (!scene->getMainLight() || !shadowVisible) { return; }
-    
+
     const auto models = scene->getModels();
     const auto modelCount = models[0];
     auto *instancedBuffer = InstancedBuffer::get(shadowInfo->planarPass);

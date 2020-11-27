@@ -37,7 +37,7 @@ private:
 
     gfx::Buffer *_deferredLitsBufs = nullptr;
     gfx::Buffer *_deferredLitsBufView = nullptr;
-    std::vector<float32> _lightBufferData;
+    std::vector<float> _lightBufferData;
     uint _lightBufferStride = 0;
     uint _lightBufferElementCount = 0;
     float _lightMeterScale = 1000.0;

@@ -595,6 +595,20 @@ cocos_source_files(
     cocos/renderer/pipeline/forward/ForwardStage.h
     cocos/renderer/pipeline/forward/SceneCulling.cpp
     cocos/renderer/pipeline/forward/SceneCulling.h
+    cocos/renderer/pipeline/deferred/DeferredPipeline.cpp
+    cocos/renderer/pipeline/deferred/DeferredPipeline.h
+    cocos/renderer/pipeline/deferred/GBufferFlow.cpp
+    cocos/renderer/pipeline/deferred/GBufferFlow.h
+    cocos/renderer/pipeline/deferred/GBufferStage.cpp
+    cocos/renderer/pipeline/deferred/GBufferStage.h
+    cocos/renderer/pipeline/deferred/LightingFlow.cpp
+    cocos/renderer/pipeline/deferred/LightingFlow.h
+    cocos/renderer/pipeline/deferred/LightingStage.cpp
+    cocos/renderer/pipeline/deferred/LightingStage.h
+    cocos/renderer/pipeline/deferred/PostprocessStage.cpp
+    cocos/renderer/pipeline/deferred/PostprocessStage.h
+    cocos/renderer/pipeline/deferred/SceneCulling.cpp
+    cocos/renderer/pipeline/deferred/SceneCulling.h
     cocos/renderer/pipeline/shadow/ShadowFlow.cpp
     cocos/renderer/pipeline/shadow/ShadowFlow.h
     cocos/renderer/pipeline/shadow/ShadowStage.cpp

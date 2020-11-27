@@ -28,8 +28,8 @@ private:
     gfx::Texture *_lightingRenderTarget = nullptr;
     gfx::Texture *_depth = nullptr;
     gfx::Framebuffer *_lightingFrameBuff = nullptr;
-    float _width;
-    float _height;
+    uint _width;
+    uint _height;
 };
 
 } // namespace pipeline

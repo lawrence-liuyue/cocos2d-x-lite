@@ -3,6 +3,7 @@
 #include "../core/CoreStd.h"
 #include "Define.h"
 #include "helper/DefineMap.h"
+#include "helper/SharedMemory.h"
 
 namespace cc {
 namespace gfx {
@@ -13,6 +14,7 @@ class DescriptorSetLayout;
 namespace pipeline {
 class DefineMap;
 class RenderView;
+struct Shadows;
 
 struct CC_DLL RenderPipelineInfo {
     uint tag = 0;
@@ -38,7 +40,10 @@ public:
     CC_INLINE void setValue(const String &name, bool value) { _macros.setValue(name, value); }
     CC_INLINE gfx::DescriptorSet *getDescriptorSet() const { return _descriptorSet; }
     CC_INLINE gfx::DescriptorSetLayout *getDescriptorSetLayout() const { return _descriptorSetLayout; }
-    CC_INLINE gfx::Device getDevice() const {return _device;}
+    CC_INLINE gfx::Device *getDevice() const {return _device;}
+
+    CC_INLINE Shadows *getShadows() const { return _shadows; }
+    CC_INLINE void setShadows(uint shadows) { _shadows = GET_SHADOWS(shadows);}
 
 protected:
     static RenderPipeline *_instance;
@@ -53,6 +58,8 @@ protected:
     gfx::Device *_device = nullptr;
     gfx::DescriptorSetLayout *_descriptorSetLayout = nullptr;
     gfx::DescriptorSet *_descriptorSet = nullptr;
+
+    Shadows *_shadows = nullptr;
 };
 
 } // namespace pipeline

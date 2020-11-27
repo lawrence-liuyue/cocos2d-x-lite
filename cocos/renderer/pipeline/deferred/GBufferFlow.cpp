@@ -1,13 +1,16 @@
 #include "GBufferFlow.h"
 #include "DeferredPipeline.h"
 #include "GBufferStage.h"
-//#include "SceneCulling.h"
+#include "SceneCulling.h"
+#include "../../core/gfx/GFXDevice.h"
+#include "../../core/gfx/GFXDescriptorSet.h"
+#include "../../core/gfx/GFXSampler.h"
 
 namespace cc {
 namespace pipeline {
 RenderFlowInfo GBufferFlow::_initInfo = {
     "GBufferFlow",
-    static_cast<uint>(DefferredFlowPriority::GBUFFER),
+    static_cast<uint>(DeferredFlowPriority::GBUFFER),
     static_cast<uint>(RenderFlowTag::SCENE),
     {},
 };
@@ -28,7 +31,7 @@ bool GBufferFlow::initialize(const RenderFlowInfo &info) {
     return true;
 }
 
-void GBufferFlow::createRenderPass(gfx::device *device) {
+void GBufferFlow::createRenderPass(gfx::Device *device) {
     if (_gbufferRenderPass != nullptr) {
         return;
     }
@@ -37,9 +40,9 @@ void GBufferFlow::createRenderPass(gfx::device *device) {
 
     gfx::ColorAttachment color = {
         gfx::Format::RGBA32F,
+        1,
         gfx::LoadOp::CLEAR,
         gfx::StoreOp::STORE,
-        1,
         gfx::TextureLayout::UNDEFINED,
         gfx::TextureLayout::COLOR_ATTACHMENT_OPTIMAL
     };
@@ -50,11 +53,11 @@ void GBufferFlow::createRenderPass(gfx::device *device) {
 
     gfx::DepthStencilAttachment depth = {
         device->getDepthStencilFormat(),
-        gfx::LoadOp::CLEAR,
-        gfx::StoreOp::STORE,
-        gfx::LoadOp::CLEAR,
-        gfx::StoreOp::STORE,
         1,
+        gfx::LoadOp::CLEAR,
+        gfx::StoreOp::STORE,
+        gfx::LoadOp::CLEAR,
+        gfx::StoreOp::STORE,
         gfx::TextureLayout::UNDEFINED,
         gfx::TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     };
@@ -63,7 +66,7 @@ void GBufferFlow::createRenderPass(gfx::device *device) {
     _gbufferRenderPass = device->createRenderPass(info);
 }
 
-void GBufferFlow::createRenderTargets(gfx::device *device) {
+void GBufferFlow::createRenderTargets(gfx::Device *device) {
     gfx::TextureInfo info = {
         gfx::TextureType::TEX2D,
         gfx::TextureUsageBit::COLOR_ATTACHMENT | gfx::TextureUsageBit::SAMPLED,
@@ -97,36 +100,52 @@ void GBufferFlow::createRenderTargets(gfx::device *device) {
 
         _gbufferFrameBuffer = device->createFramebuffer(fbInfo);
     }
-
-    for (int i = 0; i < _stages.size(); i++) {
-        _stage[i]->setGbufferFrameBuffer(_gbufferFrameBuffer);
-    }
 }
 
 void GBufferFlow::activate(RenderPipeline *pipeline) {
     RenderFlow::activate(pipeline);
 
-    gfx::Device *device = pipeline->GetDevice();
-    _width = device->geWidth();
+    gfx::Device *device = pipeline->getDevice();
+    _width = device->getWidth();
     _height = device->getHeight();
 
     createRenderPass(device);
     createRenderTargets(device);
+
+    pipeline->getDescriptorSet()->bindTexture(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_ALBEDOMAP), _gbufferFrameBuffer->getColorTextures()[0]);
+    pipeline->getDescriptorSet()->bindTexture(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_POSITIONMAP), _gbufferFrameBuffer->getColorTextures()[1]);
+    pipeline->getDescriptorSet()->bindTexture(
+       static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_NORMALMAP), _gbufferFrameBuffer->getColorTextures()[2]);
+    pipeline->getDescriptorSet()->bindTexture(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_EMISSIVEMAP), _gbufferFrameBuffer->getColorTextures()[3]);
+
+    gfx::SamplerInfo sInfo = {
+        gfx::Filter::LINEAR,
+        gfx::Filter::LINEAR,
+        gfx::Filter::NONE,
+        gfx::Address::CLAMP,
+        gfx::Address::CLAMP,
+        gfx::Address::CLAMP,
+    };
+
+    uint hash = genSamplerHash(sInfo);
+    gfx::Sampler *gbufferSampler = getSampler(hash);
+    pipeline->getDescriptorSet()->bindSampler(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_ALBEDOMAP), gbufferSampler);
+    pipeline->getDescriptorSet()->bindSampler(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_POSITIONMAP), gbufferSampler);
+    pipeline->getDescriptorSet()->bindSampler(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_NORMALMAP), gbufferSampler);
+    pipeline->getDescriptorSet()->bindSampler(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_GBUFFER_EMISSIVEMAP), gbufferSampler);
 }
 
 void GBufferFlow::render(RenderView *view) {
     auto pipeline = static_cast<DeferredPipeline *>(_pipeline);
     pipeline->updateUBOs(view);
     RenderFlow::render(view);
-
-    pipeline->getDescriptorSet()->bindTexture(
-        PipelineGlobalBindings::SAMPLER_GBUFFER_ALBEDOMAP, _gbufferFrameBuffer->getColorTextures()[0]);
-    pipeline->getDescriptorSet()->bindTexture(
-        PipelineGlobalBindings::SAMPLER_GBUFFER_POSITIONMAP, _gbufferFrameBuffer->getColorTextures()[1]);
-    pipeline->getDescriptorSet()->bindTexture(
-        PipelineGlobalBindings::SAMPLER_GBUFFER_NORMALMAP, _gbufferFrameBuffer->getColorTextures()[2]);
-    pipeline->getDescriptorSet()->bindTexture(
-        PipelineGlobalBindings::SAMPLER_GBUFFER_NORMALMAP, _gbufferFrameBuffer->getColorTextures()[3]);
 }
 
 void GBufferFlow::destroy() {

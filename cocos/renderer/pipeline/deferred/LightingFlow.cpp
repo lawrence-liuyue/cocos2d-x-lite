@@ -2,12 +2,15 @@
 #include "DeferredPipeline.h"
 #include "LightingStage.h"
 #include "SceneCulling.h"
+#include "gfx/GFXDevice.h"
+#include "gfx/GFXDescriptorSet.h"
+#include "gfx/GFXFramebuffer.h"
 
 namespace cc {
 namespace pipeline {
 RenderFlowInfo LightingFlow::_initInfo = {
     "LightingFlow",
-    static_cast<uint>(DefferredFlowPriority::LIGHTING),
+    static_cast<uint>(DeferredFlowPriority::LIGHTING),
     static_cast<uint>(RenderFlowTag::SCENE),
     {},
 };
@@ -30,31 +33,31 @@ bool LightingFlow::initialize(const RenderFlowInfo &info) {
 
 void LightingFlow::activate(RenderPipeline *pipeline) {
     RenderFlow::activate(pipeline);
-    if (_lighingRenderPass != nullptr) {
-        continue;
+    if (_lightingRenderPass != nullptr) {
+        return;
     }
 
     auto device = pipeline->getDevice();
     _width = device->getWidth();
     _height = device->getHeight();
 
-    gfx::RenderPassInfo info;
-    info.colorAttachments.push_back({
+    gfx::ColorAttachment cAttch = {
         gfx::Format::RGBA32F,
+        1,
         gfx::LoadOp::CLEAR,
         gfx::StoreOp::STORE,
-        1,
         gfx::TextureLayout::UNDEFINED,
         gfx::TextureLayout::COLOR_ATTACHMENT_OPTIMAL
-    });
-
+    };
+    gfx::RenderPassInfo info;
+    info.colorAttachments.push_back(cAttch);
     info.depthStencilAttachment = {
         device->getDepthStencilFormat(),
+        1,
         gfx::LoadOp::LOAD,
         gfx::StoreOp::DISCARD,
         gfx::LoadOp::DISCARD,
         gfx::StoreOp::DISCARD,
-        1,
         gfx::TextureLayout::UNDEFINED,
         gfx::TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     };
@@ -79,15 +82,16 @@ void LightingFlow::activate(RenderPipeline *pipeline) {
     if (!_lightingFrameBuff) {
         gfx::FramebufferInfo fbInfo;
         fbInfo.renderPass = _lightingRenderPass;
-        fbInfo.colorMipmapLevels.push_back(_lightingRenderTarget);
+        fbInfo.colorTextures.push_back(_lightingRenderTarget);
         fbInfo.depthStencilTexture = _depth;
         _lightingFrameBuff = device->createFramebuffer(fbInfo);
         assert(_lightingFrameBuff != nullptr);
     }
 
     // bind sampler and texture, used in copystage
-    pipeline->getDescriptorSet()->bindTexture(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP,
-        _lightingFrameBuffer->getColorTextures()[0]);
+    pipeline->getDescriptorSet()->bindTexture(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP),
+        _lightingFrameBuff->getColorTextures()[0]);
 
     gfx::SamplerInfo spInfo = {
         gfx::Filter::LINEAR,
@@ -99,12 +103,14 @@ void LightingFlow::activate(RenderPipeline *pipeline) {
     };
 
     auto spHash = genSamplerHash(spInfo);
-    const gfx::Sampler copySampler = getSampler(spHash);
-    pipeline->getDescriptorSet()->bindSampler(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP, copySampler);
+    gfx::Sampler *copySampler = getSampler(spHash);
+    pipeline->getDescriptorSet()->bindSampler(
+        static_cast<uint>(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP),
+        copySampler);
 }
 
 void LightingFlow::render(RenderView *view) {
-    auto pipeline = static_cast<ForwardPipeline *>(_pipeline);
+    auto pipeline = dynamic_cast<DeferredPipeline *>(_pipeline);
     pipeline->updateUBOs(view);
     RenderFlow::render(view);
 }

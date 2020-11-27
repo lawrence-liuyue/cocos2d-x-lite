@@ -13,6 +13,8 @@
 #include "gfx/GFXDevice.h"
 #include "gfx/GFXFramebuffer.h"
 #include "gfx/GFXQueue.h"
+#include "gfx/GFXDescriptorSet.h"
+#include "../PipelineStateManager.h"
 
 namespace cc {
 namespace pipeline {
@@ -78,7 +80,7 @@ void LightingStage::gatherLights(RenderView *view) {
         const auto light = scene->getSphereLight(sphereLightArrayID[i]);
         sphere.setCenter(light->position);
         sphere.setRadius(light->range);
-        if (!sphere_frustum(&sphere, camera->getFrustum())) {
+        if (!sphere_frustum(&sphere, view->getCamera()->getFrustum())) {
             continue;
         }
         // position
@@ -89,36 +91,37 @@ void LightingStage::gatherLights(RenderView *view) {
         _lightBufferData[offset + 3] = 0;
 
         // color
-        offset = idx * fieldLenth + totalFieldLen;
+        offset = idx * fieldLen + totalFieldLen;
         tmpArray.set(light->color.x, light->color.y, light->color.z, 0);
         if (light->useColorTemperature) {
-            tmpArray[0] *= light->colorTemperatureRGB.x;
-            tmpArray[1] *= light->colorTemperatureRGB.y;
-            tmpArray[2] *= light->colorTemperatureRGB.z;
+            tmpArray.x *= light->colorTemperatureRGB.x;
+            tmpArray.y *= light->colorTemperatureRGB.y;
+            tmpArray.z *= light->colorTemperatureRGB.z;
         }
 
-        if (pipeline->isHDR() {
-            tmpArray[3] = light->luminance * pipeline->getFpScale() * _lightMeterScale;
+        if (pipeline->isHDR()) {
+            tmpArray.w = light->luminance * pipeline->getFpScale() * _lightMeterScale;
         } else {
-            tmpArray[3] = light->luminance * exposure * _lightMeterScale;
+            tmpArray.w = light->luminance * exposure * _lightMeterScale;
         }
 
-        for (int i = 0; i < 4; ++i) {
-            _lightBufferData[offset + i] = tmpArray[i];
-        }
+        _lightBufferData[offset + 0] = tmpArray.x;
+        _lightBufferData[offset + 1] = tmpArray.y;
+        _lightBufferData[offset + 2] = tmpArray.z;
+        _lightBufferData[offset + 3] = tmpArray.w;
 
         // size reange angle
-        offset = idx * fieldLenth + totalFieldLen * 2;
+        offset = idx * fieldLen + totalFieldLen * 2;
         _lightBufferData[offset] = light->size;
         _lightBufferData[offset + 1] = light->range;
         _lightBufferData[offset + 2] = 0;
     }
 
     for (int i = 1; i <= spotCount; i++, idx++) {
-        const auto light = scene->getSpotLight(SpotLightArrayID[i]);
+        const auto light = scene->getSpotLight(spotLightArrayID[i]);
         sphere.setCenter(light->position);
         sphere.setRadius(light->range);
-        if (!sphere_frustum(&sphere, camera->getFrustum())) {
+        if (!sphere_frustum(&sphere, view->getCamera()->getFrustum())) {
             continue;
         }
         // position
@@ -129,35 +132,36 @@ void LightingStage::gatherLights(RenderView *view) {
         _lightBufferData[offset + 3] = 1;
 
         // color
-        offset = idx * fieldLenth + totalFieldLen;
+        offset = idx * fieldLen + totalFieldLen;
         tmpArray.set(light->color.x, light->color.y, light->color.z, 0);
         if (light->useColorTemperature) {
-            tmpArray[0] *= light->colorTemperatureRGB.x;
-            tmpArray[1] *= light->colorTemperatureRGB.y;
-            tmpArray[2] *= light->colorTemperatureRGB.z;
+            tmpArray.x *= light->colorTemperatureRGB.x;
+            tmpArray.y *= light->colorTemperatureRGB.y;
+            tmpArray.z *= light->colorTemperatureRGB.z;
         }
 
-        if (pipeline->isHDR() {
-            tmpArray[3] = light->luminance * pipeline->getFpScale() * _lightMeterScale;
+        if (pipeline->isHDR()) {
+            tmpArray.w = light->luminance * pipeline->getFpScale() * _lightMeterScale;
         } else {
-            tmpArray[3] = light->luminance * exposure * _lightMeterScale;
+            tmpArray.w = light->luminance * exposure * _lightMeterScale;
         }
 
-        for (int i = 0; i < 4; ++i) {
-            _lightBufferData[offset + i] = tmpArray[i];
-        }
+        _lightBufferData[offset + 0] = tmpArray.x;
+        _lightBufferData[offset + 1] = tmpArray.y;
+        _lightBufferData[offset + 2] = tmpArray.z;
+        _lightBufferData[offset + 3] = tmpArray.w;
 
         // size reange angle
-        offset = idx * fieldLenth + totalFieldLen * 2;
+        offset = idx * fieldLen + totalFieldLen * 2;
         _lightBufferData[offset] = light->size;
         _lightBufferData[offset + 1] = light->range;
-        _lightBufferData[offset + 2] = light.spotAngle;
+        _lightBufferData[offset + 2] = light->spotAngle;
 
         // dir
-        offset = idx * fieldLenth + totalFieldLen * 3;
-        for (int i = 0; i < 3; ++i) {
-            _lightBufferData[offset + i] = light->direction[i];
-        }
+        offset = idx * fieldLen + totalFieldLen * 3;
+        _lightBufferData[offset] = light->direction.x;
+        _lightBufferData[offset + 1] = light->direction.y;
+        _lightBufferData[offset + 2] = light->direction.z;
     }
 
     _lightBufferData[totalFieldLen * 4] = sphereCount + spotCount;
@@ -177,7 +181,7 @@ void LightingStage::activate(RenderPipeline *pipeline, RenderFlow *flow) {
         gfx::BufferUsageBit::UNIFORM | gfx::BufferUsageBit::TRANSFER_DST,
         gfx::MemoryUsageBit::HOST | gfx::MemoryUsageBit::DEVICE,
         totalSize,
-        device->getUboOffsetAlignment(),
+        static_cast<uint>(device->getUboOffsetAlignment()),
     };
     _deferredLitsBufs = device->createBuffer(bfInfo);
     assert(_deferredLitsBufs != nullptr);
@@ -189,7 +193,7 @@ void LightingStage::activate(RenderPipeline *pipeline, RenderFlow *flow) {
     _deferredLitsBufView->resize(totalSize / sizeof(float));
 
     // create descriptorset/layout
-    gfx::DescriptorSetLayoutInfo layoutInfo = {localDescriptorSetLayout.bindins};
+    gfx::DescriptorSetLayoutInfo layoutInfo = {localDescriptorSetLayout.bindings};
     _descLayout = device->createDescriptorSetLayout(layoutInfo);
 
     gfx::DescriptorSetInfo setInfo = {_descLayout};
@@ -229,10 +233,10 @@ void LightingStage::render(RenderView *view) {
     auto cmdBuff = pipeline->getCommandBuffers()[0];
 
     // lighting info
-    gatherLights();
-    _descriptorSet->bindBuffer(ModelLocalBindings::UBO_DEFERRED_LIGHTS, _deferredLitsBufView);
+    gatherLights(view);
+    _descriptorSet->bindBuffer(static_cast<uint>(ModelLocalBindings::UBO_DEFERRED_LIGHTS), _deferredLitsBufView);
     _descriptorSet->update();
-    cmdBuff->bindDescriptorSet(SetIndex::LOCAL, _descriptorSet);
+    cmdBuff->bindDescriptorSet(static_cast<uint>(SetIndex::LOCAL), _descriptorSet);
 
     // draw quad
     auto camera = view->getCamera();
@@ -240,10 +244,10 @@ void LightingStage::render(RenderView *view) {
     renderArea.x = camera->viewportX * camera->width;
     renderArea.y = camera->viewportY * camera->height;
     renderArea.width = camera->viewportWidth * camera->width * pipeline->getShadingScale();
-    renderArea.height = camera->viewportHeight * camera->Height * pipeline->getShadingScale();
+    renderArea.height = camera->viewportHeight * camera->height * pipeline->getShadingScale();
 
     gfx::Color clearColor = {0.0, 0.0, 0.0, 1.0};
-    if (camera->clearFlag | gfx::ClearFlagBit::COLOR) {
+    if (camera->clearFlag | static_cast<uint>( gfx::ClearFlagBit::COLOR)) {
         if (pipeline->isHDR()) {
             SRGBToLinear(clearColor, camera->clearColor);
             const auto scale = pipeline->getFpScale() / camera->exposure;
@@ -266,20 +270,19 @@ void LightingStage::render(RenderView *view) {
     cmdBuff->beginRenderPass(renderPass, frameBuffer, renderArea, &clearColor,
        camera->clearDepth, camera->clearStencil);
 
-    cmdBuff->bindDescriptorSet(SetIndex::GLOBAL, pipeline->getDescriptorSet());
+    cmdBuff->bindDescriptorSet(static_cast<uint>(SetIndex::GLOBAL), pipeline->getDescriptorSet());
 
     // get pso and draw quad
-    auto pass = GET_PASS(_phaseID);
-    auto shader = GET_SHADER(_phaseID);
+    PassView *pass = nullptr;
+    gfx::Shader *shader = nullptr;
     gfx::InputAssembler* inputAssembler = pipeline->getQuadIA();
-
     gfx::PipelineState *pState =PipelineStateManager::getOrCreatePipelineState(
         pass, shader, inputAssembler, renderPass);
     assert(pState != nullptr);
 
     cmdBuff->bindPipelineState(pState);
     cmdBuff->bindInputAssembler(inputAssembler);
-    cmdBuff->draw(inputAssermbler);
+    cmdBuff->draw(inputAssembler);
 
     // planerQueue
     _planarShadowQueue->recordCommandBuffer(_device, renderPass, cmdBuff);
@@ -303,8 +306,8 @@ void LightingStage::render(RenderView *view) {
                 const PassView *pass = subModel->getPassView(p);
 
                 if (pass->phase != _transparentPhaseID) continue;
-                for (k i = 0; k < _renderQueues.size(); k++) {
-                    RenderQueue[i]->insertRenderPass(ro, m, p);
+                for (k = 0; k < _renderQueues.size(); k++) {
+                    _renderQueues[k]->insertRenderPass(ro, m, p);
                 }
             }
         }

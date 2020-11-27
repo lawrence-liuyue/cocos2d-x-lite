@@ -35,9 +35,9 @@ public:
     void gatherShadowPasses(RenderView *view , gfx::CommandBuffer *cmdBufferer);
     void recordCommandBuffer(gfx::Device *, gfx::RenderPass *, gfx::CommandBuffer *);
     void destroy();
-    
+
 private:
-    ForwardPipeline *_pipeline = nullptr;
+    RenderPipeline *_pipeline = nullptr;
     RenderInstancedQueue *_instancedQueue = nullptr;
     std::vector<const ModelView *> _pendingModels;
 };

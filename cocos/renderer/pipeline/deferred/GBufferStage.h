@@ -18,8 +18,8 @@ class CC_DLL GBufferStage : public RenderStage {
 public:
     static const RenderStageInfo &getInitializeInfo();
 
-    ForwardStage();
-    ~ForwardStage();
+    GBufferStage();
+    ~GBufferStage();
 
     virtual bool initialize(const RenderStageInfo &info) override;
     virtual void activate(RenderPipeline *pipeline, RenderFlow *flow) override;
