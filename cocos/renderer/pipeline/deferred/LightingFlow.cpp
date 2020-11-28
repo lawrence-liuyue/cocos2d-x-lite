@@ -31,40 +31,35 @@ bool LightingFlow::initialize(const RenderFlowInfo &info) {
     return true;
 }
 
-void LightingFlow::activate(RenderPipeline *pipeline) {
-    RenderFlow::activate(pipeline);
-    if (_lightingRenderPass != nullptr) {
-        return;
+void LightingFlow::createRenderPass(gfx::Device *device) {
+    if (_lightingRenderPass == nullptr) {
+        gfx::ColorAttachment cAttch = {
+            gfx::Format::RGBA32F,
+            1,
+            gfx::LoadOp::CLEAR,
+            gfx::StoreOp::STORE,
+            gfx::TextureLayout::UNDEFINED,
+            gfx::TextureLayout::COLOR_ATTACHMENT_OPTIMAL
+        };
+        gfx::RenderPassInfo info;
+        info.colorAttachments.push_back(cAttch);
+        info.depthStencilAttachment = {
+            device->getDepthStencilFormat(),
+            1,
+            gfx::LoadOp::LOAD,
+            gfx::StoreOp::DISCARD,
+            gfx::LoadOp::DISCARD,
+            gfx::StoreOp::DISCARD,
+            gfx::TextureLayout::UNDEFINED,
+            gfx::TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+        };
+
+        _lightingRenderPass = device->createRenderPass(info);
+        assert(_lightingRenderPass != nullptr);
     }
+}
 
-    auto device = pipeline->getDevice();
-    _width = device->getWidth();
-    _height = device->getHeight();
-
-    gfx::ColorAttachment cAttch = {
-        gfx::Format::RGBA32F,
-        1,
-        gfx::LoadOp::CLEAR,
-        gfx::StoreOp::STORE,
-        gfx::TextureLayout::UNDEFINED,
-        gfx::TextureLayout::COLOR_ATTACHMENT_OPTIMAL
-    };
-    gfx::RenderPassInfo info;
-    info.colorAttachments.push_back(cAttch);
-    info.depthStencilAttachment = {
-        device->getDepthStencilFormat(),
-        1,
-        gfx::LoadOp::LOAD,
-        gfx::StoreOp::DISCARD,
-        gfx::LoadOp::DISCARD,
-        gfx::StoreOp::DISCARD,
-        gfx::TextureLayout::UNDEFINED,
-        gfx::TextureLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-    };
-
-    _lightingRenderPass = device->createRenderPass(info);
-    assert(_lightingRenderPass);
-
+void LightingFlow::createFrameBuffer(gfx::Device *device) {
     if (_lightingRenderTarget == nullptr) {
         gfx::TextureInfo rtInfo = {
             gfx::TextureType::TEX2D,
@@ -76,9 +71,6 @@ void LightingFlow::activate(RenderPipeline *pipeline) {
         _lightingRenderTarget = device->createTexture(rtInfo);
     }
 
-    DeferredPipeline *pp = dynamic_cast<DeferredPipeline *>(pipeline);
-    _depth = pp->getDepth();
-
     if (!_lightingFrameBuff) {
         gfx::FramebufferInfo fbInfo;
         fbInfo.renderPass = _lightingRenderPass;
@@ -87,8 +79,29 @@ void LightingFlow::activate(RenderPipeline *pipeline) {
         _lightingFrameBuff = device->createFramebuffer(fbInfo);
         assert(_lightingFrameBuff != nullptr);
     }
+}
 
-    // bind sampler and texture, used in copystage
+void LightingFlow::activate(RenderPipeline *pipeline) {
+    RenderFlow::activate(pipeline);
+    if (_lightingRenderPass != nullptr) {
+        return;
+    }
+
+    auto device = pipeline->getDevice();
+    _width = device->getWidth();
+    _height = device->getHeight();
+
+    DeferredPipeline *pp = dynamic_cast<DeferredPipeline *>(pipeline);
+    assert(pp != nullptr);
+    _depth = pp->getDepth();
+
+    // create renderpass
+    createRenderPass(device);
+
+    // create framebuffer
+    createFrameBuffer(device);
+
+    // bind sampler and texture, used in postprocess
     pipeline->getDescriptorSet()->bindTexture(
         static_cast<uint>(PipelineGlobalBindings::SAMPLER_LIGHTING_RESULTMAP),
         _lightingFrameBuff->getColorTextures()[0]);

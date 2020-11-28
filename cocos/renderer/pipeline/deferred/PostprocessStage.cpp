@@ -50,8 +50,10 @@ void PostprocessStage::render(RenderView *view) {
     cmdBf->bindDescriptorSet(static_cast<uint>(SetIndex::GLOBAL), pp->getDescriptorSet());
 
     // post process
-    PassView *pv = nullptr;
-    gfx::Shader *sd = nullptr;
+    Root *root = GET_ROOT();
+    assert(root != nullptr);
+    PassView *pv = GET_PASS(root->deferredPostPass);
+    gfx::Shader *sd = GET_SHADER(root->deferredPostPassShader);
     gfx::InputAssembler *ia = pp->getQuadIA();
     gfx::PipelineState *pso = PipelineStateManager::getOrCreatePipelineState(pv, sd, ia, rp);
     assert(pso != nullptr);

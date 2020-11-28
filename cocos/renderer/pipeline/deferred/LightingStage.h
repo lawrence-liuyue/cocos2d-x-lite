@@ -25,6 +25,8 @@ public:
     virtual void destroy() override;
     virtual void render(RenderView *view) override;
 
+    void initLightingBuffer();
+
 private:
     void gatherLights(RenderView *view);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../RenderFlow.h"
+#include "gfx/GFXDevice.h"
 
 namespace cc {
 namespace pipeline {
@@ -19,6 +20,8 @@ public:
     virtual void destroy() override;
     virtual void render(RenderView *view) override;
 
+    void createRenderPass(gfx::Device *device);
+    void createFrameBuffer(gfx::Device *device);
     gfx::Framebuffer *getLightingFrameBuffer(){return _lightingFrameBuff;}
 
 private:

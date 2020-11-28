@@ -20,6 +20,7 @@ public:
     virtual void activate(RenderPipeline *pipeline) override;
     virtual void destroy() override;
     virtual void render(RenderView *view) override;
+    gfx::Framebuffer *getFrameBuffer() {return _gbufferFrameBuffer;}
 
 private:
     void createRenderPass(gfx::Device *device);

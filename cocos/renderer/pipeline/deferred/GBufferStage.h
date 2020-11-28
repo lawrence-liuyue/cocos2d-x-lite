@@ -26,8 +26,6 @@ public:
     virtual void destroy() override;
     virtual void render(RenderView *view) override;
 
-    void getGbufferFrameBuffer(gfx::Framebuffer *fb) {_gbufferFrameBuffer = fb;}
-
 private:
     static RenderStageInfo _initInfo;
     PlanarShadowQueue *_planarShadowQueue = nullptr;
@@ -35,8 +33,6 @@ private:
     RenderInstancedQueue *_instancedQueue = nullptr;
     gfx::Rect _renderArea;
     uint _phaseID = 0;
-
-    gfx::Framebuffer *_gbufferFrameBuffer = nullptr;
 };
 
 } // namespace pipeline

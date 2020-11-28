@@ -168,29 +168,42 @@ void LightingStage::gatherLights(RenderView *view) {
     cmdBuf->updateBuffer(_deferredLitsBufs, _lightBufferData.data());
 }
 
-void LightingStage::activate(RenderPipeline *pipeline, RenderFlow *flow) {
-    RenderStage::activate(pipeline, flow);
+void LightingStage::initLightingBuffer() {
+    auto device = _pipeline->getDevice();
 
-    auto device = pipeline->getDevice();
-    // color/pos/dir/angle 都是vec4存储
+    // color/pos/dir/angle 都是vec4存储, 最后一个vec4只要x存储光源个数
     uint totalSize = sizeof(Vec4) * 4 * _maxDeferredLights + sizeof(Vec4);
     totalSize = std::ceil((float)totalSize / device->getUboOffsetAlignment()) * device->getUboOffsetAlignment();
 
     // create lighting buffer and view
-    gfx::BufferInfo bfInfo = {
-        gfx::BufferUsageBit::UNIFORM | gfx::BufferUsageBit::TRANSFER_DST,
-        gfx::MemoryUsageBit::HOST | gfx::MemoryUsageBit::DEVICE,
-        totalSize,
-        static_cast<uint>(device->getUboOffsetAlignment()),
-    };
-    _deferredLitsBufs = device->createBuffer(bfInfo);
-    assert(_deferredLitsBufs != nullptr);
+    if (_deferredLitsBufs == nullptr) {
+        gfx::BufferInfo bfInfo = {
+            gfx::BufferUsageBit::UNIFORM | gfx::BufferUsageBit::TRANSFER_DST,
+            gfx::MemoryUsageBit::HOST | gfx::MemoryUsageBit::DEVICE,
+            totalSize,
+            static_cast<uint>(device->getUboOffsetAlignment()),
+        };
+        _deferredLitsBufs = device->createBuffer(bfInfo);
+        assert(_deferredLitsBufs != nullptr);
+    }
 
-    gfx::BufferViewInfo bvInfo = {_deferredLitsBufs, 0, totalSize};
-    _deferredLitsBufView = device->createBuffer(bvInfo);
-    assert(_deferredLitsBufView != nullptr);
+    if (_deferredLitsBufView == nullptr) {
+        gfx::BufferViewInfo bvInfo = {_deferredLitsBufs, 0, totalSize};
+        _deferredLitsBufView = device->createBuffer(bvInfo);
+        assert(_deferredLitsBufView != nullptr);
+        _descriptorSet->bindBuffer(static_cast<uint>(ModelLocalBindings::UBO_DEFERRED_LIGHTS), _deferredLitsBufView);
+    }
 
     _deferredLitsBufView->resize(totalSize / sizeof(float));
+}
+
+void LightingStage::activate(RenderPipeline *pipeline, RenderFlow *flow) {
+    RenderStage::activate(pipeline, flow);
+
+    auto device = pipeline->getDevice();
+
+    // create lighting buffer and view
+    initLightingBuffer();
 
     // create descriptorset/layout
     gfx::DescriptorSetLayoutInfo layoutInfo = {localDescriptorSetLayout.bindings};
@@ -234,7 +247,6 @@ void LightingStage::render(RenderView *view) {
 
     // lighting info
     gatherLights(view);
-    _descriptorSet->bindBuffer(static_cast<uint>(ModelLocalBindings::UBO_DEFERRED_LIGHTS), _deferredLitsBufView);
     _descriptorSet->update();
     cmdBuff->bindDescriptorSet(static_cast<uint>(SetIndex::LOCAL), _descriptorSet);
 
@@ -273,8 +285,10 @@ void LightingStage::render(RenderView *view) {
     cmdBuff->bindDescriptorSet(static_cast<uint>(SetIndex::GLOBAL), pipeline->getDescriptorSet());
 
     // get pso and draw quad
-    PassView *pass = nullptr;
-    gfx::Shader *shader = nullptr;
+    Root *root = GET_ROOT();
+    assert(root != nullptr);
+    PassView *pass = GET_PASS(root->deferredLightPass);
+    gfx::Shader *shader = GET_SHADER(root->deferredLightPassShader);
     gfx::InputAssembler* inputAssembler = pipeline->getQuadIA();
     gfx::PipelineState *pState =PipelineStateManager::getOrCreatePipelineState(
         pass, shader, inputAssembler, renderPass);

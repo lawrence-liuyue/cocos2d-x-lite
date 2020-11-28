@@ -1,4 +1,6 @@
 #include "DeferredPipeline.h"
+#include "GBufferFlow.h"
+#include "LightingFlow.h"
 #include "../RenderView.h"
 #include "../shadow/ShadowFlow.h"
 #include "../ui/UIFlow.h"
@@ -100,21 +102,21 @@ bool DeferredPipeline::initialize(const RenderPipelineInfo &info) {
     RenderPipeline::initialize(info);
 
     if (_flows.size() == 0) {
-        //auto shadowFlow = CC_NEW(ShadowFlow);
-        //shadowFlow->initialize(ShadowFlow::getInitializeInfo());
-        //_flows.emplace_back(shadowFlow);
+        auto shadowFlow = CC_NEW(ShadowFlow);
+        shadowFlow->initialize(ShadowFlow::getInitializeInfo());
+        _flows.emplace_back(shadowFlow);
 
-        //auto gbufferFlow = CC_NEW(GBufferFlow);
-        //gbufferFlow->initialize();
-        //_flows.emplace_back(gbufferFlow);
+        auto gbufferFlow = CC_NEW(GBufferFlow);
+        gbufferFlow->initialize(GBufferFlow::getInitializeInfo());
+        _flows.emplace_back(gbufferFlow);
 
-        //auto lightingFlow = CC_NEW(LightingFlow);
-        //lightingFlow->initialize();
-        //_flows.emplace_back(lightingFlow);
+        auto lightingFlow = CC_NEW(LightingFlow);
+        lightingFlow->initialize(LightingFlow::getInitializeInfo());
+        _flows.emplace_back(lightingFlow);
 
-        //auto uiFlow = CC_NEW(UIFlow);
-        //uiFlow->initialize(UIFlow::getInitializeInfo());
-        //_flows.emplace_back(uiFlow);
+        auto uiFlow = CC_NEW(UIFlow);
+        uiFlow->initialize(UIFlow::getInitializeInfo());
+        _flows.emplace_back(uiFlow);
     }
     _sphere = CC_NEW(Sphere);
 
@@ -155,11 +157,7 @@ void DeferredPipeline::updateUBOs(RenderView *view) {
     const auto shadowInfo = _shadows;
     auto *device = gfx::Device::getInstance();
 
-    if (mainLight && shadowInfo->getShadowType() == ShadowType::SHADOWMAP) {
-        if (_shadowFrameBufferMap.count(mainLight)) {
-            _descriptorSet->bindTexture(SHADOWMAP::BINDING, _shadowFrameBufferMap[mainLight]->getColorTextures()[0]);
-        }
-
+    if (mainLight && shadowInfo->enabled && shadowInfo->getShadowType() == ShadowType::SHADOWMAP) {
         const auto node = mainLight->getNode();
         cc::Mat4 matShadowCamera;
 
@@ -193,9 +191,12 @@ void DeferredPipeline::updateUBOs(RenderView *view) {
         matShadowViewProj.multiply(matShadowView);
         float shadowInfos[4] = {shadowInfo->size.x, shadowInfo->size.y, (float)shadowInfo->pcfType, shadowInfo->bias};
         memcpy(_shadowUBO.data() + UBOShadow::MAT_LIGHT_VIEW_PROJ_OFFSET, matShadowViewProj.m, sizeof(matShadowViewProj));
-        memcpy(_shadowUBO.data() + UBOShadow::SHADOW_COLOR_OFFSET, &shadowInfo->color, sizeof(Vec4));
         memcpy(_shadowUBO.data() + UBOShadow::SHADOW_INFO_OFFSET, &shadowInfos, sizeof(shadowInfos));
+    } else if (mainLight && shadowInfo->getShadowType() == ShadowType::PLANAR) {
+        updateDirLight(shadowInfo, mainLight, _shadowUBO);
     }
+
+    memcpy(_shadowUBO.data() + UBOShadow::SHADOW_COLOR_OFFSET, &shadowInfo->color, sizeof(Vec4));
 
     // update ubos
     _commandBuffers[0]->updateBuffer(_descriptorSet->getBuffer(UBOGlobal::BINDING), _globalUBO.data(), UBOGlobal::SIZE);
@@ -396,6 +397,8 @@ bool DeferredPipeline::activeRenderer() {
         gfx::BufferFlagBit::NONE,
     });
     _descriptorSet->bindBuffer(UBOShadow::BINDING, shadowUBO);
+
+    _descriptorSet->update();
 
     // update global defines when all states initialized.
     _macros.setValue("CC_USE_HDR", _isHDR);

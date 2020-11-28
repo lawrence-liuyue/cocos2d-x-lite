@@ -23,7 +23,7 @@ bool GBufferFlow::initialize(const RenderFlowInfo &info) {
     RenderFlow::initialize(info);
 
     if (_stages.size() == 0) {
-        auto gbufferStage = CC_NEW(GBufferStage);
+        GBufferStage *gbufferStage = CC_NEW(GBufferStage);
         gbufferStage->initialize(GBufferStage::getInitializeInfo());
         _stages.emplace_back(gbufferStage);
     }

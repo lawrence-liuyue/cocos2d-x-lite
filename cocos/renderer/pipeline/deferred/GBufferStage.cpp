@@ -1,4 +1,5 @@
 #include "GBufferStage.h"
+#include "GBufferFlow.h"
 #include "../BatchedBuffer.h"
 #include "../InstancedBuffer.h"
 #include "../PlanarShadowQueue.h"
@@ -142,9 +143,9 @@ void GBufferStage::render(RenderView *view) {
     _renderArea.width = camera->viewportWidth * w * pipeline->getShadingScale();
     _renderArea.height = camera->viewportHeight * h * pipeline->getShadingScale();
 
-    auto framebuffer = _gbufferFrameBuffer;
-    const auto &colorTextures = framebuffer->getColorTextures();
-
+    GBufferFlow *flow = dynamic_cast<GBufferFlow *>(getFlow());
+    assert(flow != nullptr);
+    auto framebuffer = flow->getFrameBuffer();
     auto renderPass = framebuffer->getRenderPass();
 
     cmdBuff->beginRenderPass(renderPass, framebuffer, _renderArea, _clearColors, camera->clearDepth, camera->clearStencil);
