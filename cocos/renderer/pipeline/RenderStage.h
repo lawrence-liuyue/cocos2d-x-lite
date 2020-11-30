@@ -47,7 +47,7 @@ protected:
     String _name;
     uint _priority = 0;
     uint _tag = 0;
-    gfx::ColorList _clearColors = {{0, 0, 0, 1.0f}};
+    gfx::ColorList _clearColors = {{0, 0, 0, 0.0f}, {0, 0, 0, 0.0f}, {0, 0, 0, 0.0f}, {0, 0, 0, 0.0f}};
 };
 
 } // namespace pipeline

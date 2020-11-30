@@ -12,7 +12,6 @@ class RenderBatchedQueue;
 class RenderInstancedQueue;
 class RenderAdditiveLightQueue;
 class PlanarShadowQueue;
-class ForwardPipeline;
 
 class CC_DLL GBufferStage : public RenderStage {
 public:

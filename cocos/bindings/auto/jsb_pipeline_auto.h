@@ -9,6 +9,13 @@ extern se::Class* __jsb_cc_pipeline_RenderQueueDesc_class;
 bool js_register_cc_pipeline_RenderQueueDesc(se::Object* obj);
 bool register_all_pipeline(se::Object* obj);
 
+extern se::Object* __jsb_cc_pipeline_RenderWindow_proto;
+extern se::Class* __jsb_cc_pipeline_RenderWindow_class;
+
+bool js_register_cc_pipeline_RenderWindow(se::Object* obj);
+bool register_all_pipeline(se::Object* obj);
+SE_DECLARE_FUNC(js_pipeline_RenderWindow_getFramebuffer);
+
 extern se::Object* __jsb_cc_pipeline_RenderPipelineInfo_proto;
 extern se::Class* __jsb_cc_pipeline_RenderPipelineInfo_class;
 
@@ -20,32 +27,21 @@ extern se::Class* __jsb_cc_pipeline_RenderPipeline_class;
 
 bool js_register_cc_pipeline_RenderPipeline(se::Object* obj);
 bool register_all_pipeline(se::Object* obj);
+SE_DECLARE_FUNC(js_pipeline_RenderPipeline_getShadows);
 SE_DECLARE_FUNC(js_pipeline_RenderPipeline_activate);
 SE_DECLARE_FUNC(js_pipeline_RenderPipeline_render);
 SE_DECLARE_FUNC(js_pipeline_RenderPipeline_setValue);
+SE_DECLARE_FUNC(js_pipeline_RenderPipeline_setShadows);
 SE_DECLARE_FUNC(js_pipeline_RenderPipeline_initialize);
 SE_DECLARE_FUNC(js_pipeline_RenderPipeline_destroy);
+SE_DECLARE_FUNC(js_pipeline_RenderPipeline_getDevice);
 SE_DECLARE_FUNC(js_pipeline_RenderPipeline_getInstance);
-
-extern se::Object* __jsb_cc_pipeline_RenderWindow_proto;
-extern se::Class* __jsb_cc_pipeline_RenderWindow_class;
-
-bool js_register_cc_pipeline_RenderWindow(se::Object* obj);
-bool register_all_pipeline(se::Object* obj);
-SE_DECLARE_FUNC(js_pipeline_RenderWindow_getFramebuffer);
 
 extern se::Object* __jsb_cc_pipeline_ForwardPipeline_proto;
 extern se::Class* __jsb_cc_pipeline_ForwardPipeline_class;
 
 bool js_register_cc_pipeline_ForwardPipeline(se::Object* obj);
 bool register_all_pipeline(se::Object* obj);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_setFog);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_getSphere);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_setRenderObjects);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_setShadows);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_getShadowFramebuffer);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_setSkybox);
-SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_setAmbient);
 SE_DECLARE_FUNC(js_pipeline_ForwardPipeline_ForwardPipeline);
 
 extern se::Object* __jsb_cc_pipeline_RenderFlowInfo_proto;
@@ -85,6 +81,7 @@ bool register_all_pipeline(se::Object* obj);
 SE_DECLARE_FUNC(js_pipeline_RenderStage_activate);
 SE_DECLARE_FUNC(js_pipeline_RenderStage_initialize);
 SE_DECLARE_FUNC(js_pipeline_RenderStage_getTag);
+SE_DECLARE_FUNC(js_pipeline_RenderStage_getFlow);
 
 extern se::Object* __jsb_cc_pipeline_ForwardStage_proto;
 extern se::Class* __jsb_cc_pipeline_ForwardStage_class;
@@ -154,4 +151,11 @@ SE_DECLARE_FUNC(js_pipeline_InstancedBuffer_destroy);
 SE_DECLARE_FUNC(js_pipeline_InstancedBuffer_setDynamicOffset);
 SE_DECLARE_FUNC(js_pipeline_InstancedBuffer_get);
 SE_DECLARE_FUNC(js_pipeline_InstancedBuffer_InstancedBuffer);
+
+extern se::Object* __jsb_cc_pipeline_DeferredPipeline_proto;
+extern se::Class* __jsb_cc_pipeline_DeferredPipeline_class;
+
+bool js_register_cc_pipeline_DeferredPipeline(se::Object* obj);
+bool register_all_pipeline(se::Object* obj);
+SE_DECLARE_FUNC(js_pipeline_DeferredPipeline_DeferredPipeline);
 

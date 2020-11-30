@@ -143,17 +143,6 @@ def main():
         output_dir = '%s/cocos/bindings/auto' % project_root
 
         cmd_args = {
-                    'cocos.ini' : ('cocos', 'jsb_cocos_auto'),
-                    'video.ini': ('video', 'jsb_video_auto'),
-                    'webview.ini': ('webview', 'jsb_webview_auto'),
-                    'audio.ini' : ('audio', 'jsb_audio_auto'),
-                    'extension.ini' : ('extension', 'jsb_extension_auto'),
-                    'network.ini' : ('network', 'jsb_network_auto'),
-                    'gfx.ini': ('gfx', 'jsb_gfx_auto'),
-                    'gles2.ini': ('gles2', 'jsb_gles2_auto'),
-                    'gles3.ini': ('gles3', 'jsb_gles3_auto'),
-                    'metal.ini': ('metal', 'jsb_mtl_auto'),
-                    'vulkan.ini': ('vulkan', 'jsb_vk_auto'),
                     'pipeline.ini': ('pipeline', 'jsb_pipeline_auto'),
                     }
         target = 'spidermonkey'

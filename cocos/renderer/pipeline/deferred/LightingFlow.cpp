@@ -1,7 +1,7 @@
 #include "LightingFlow.h"
 #include "DeferredPipeline.h"
 #include "LightingStage.h"
-#include "SceneCulling.h"
+#include "../SceneCulling.h"
 #include "gfx/GFXDevice.h"
 #include "gfx/GFXDescriptorSet.h"
 #include "gfx/GFXFramebuffer.h"

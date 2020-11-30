@@ -11,7 +11,6 @@ class RenderBatchedQueue;
 class RenderInstancedQueue;
 class RenderAdditiveLightQueue;
 class PlanarShadowQueue;
-class ForwardPipeline;
 
 class CC_DLL LightingStage : public RenderStage {
 public:

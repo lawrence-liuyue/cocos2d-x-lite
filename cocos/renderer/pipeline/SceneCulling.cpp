@@ -2,10 +2,11 @@
 #include <array>
 
 #include "SceneCulling.h"
-#include "../Define.h"
-#include "../RenderView.h"
-#include "../helper/SharedMemory.h"
-#include "ForwardPipeline.h"
+#include "Define.h"
+#include "RenderView.h"
+#include "helper/SharedMemory.h"
+#include "forward/ForwardPipeline.h"
+#include "deferred/DeferredPipeline.h"
 #include "gfx/GFXBuffer.h"
 #include "gfx/GFXDescriptorSet.h"
 #include "math/Quaternion.h"
@@ -223,7 +224,92 @@ void shadowCollecting(ForwardPipeline *pipeline, RenderView *view) {
     pipeline->setShadowObjects(shadowObjects);
 }
 
+void shadowCollecting(DeferredPipeline *pipeline, RenderView *view) {
+    const auto camera = view->getCamera();
+    const auto scene = camera->getScene();
+
+    AABB castWorldBounds;
+    auto castBoundsInited = false;
+
+    RenderObjectList shadowObjects;
+
+    const auto models = scene->getModels();
+    const auto modelCount = models[0];
+    for (size_t i = 1; i <= modelCount; i++) {
+        const auto model = scene->getModelView(models[i]);
+
+        // filter model by view visibility
+        if (model->enabled) {
+            const auto visibility = view->getVisibility();
+            const auto node = model->getNode();
+            if ((model->nodeID && ((visibility & node->layer) == node->layer)) ||
+                (visibility & model->visFlags)) {
+                // shadow render Object
+                if (model->castShadow && model->getWorldBounds()) {
+                    if (!castBoundsInited) {
+                        castWorldBounds = *model->getWorldBounds();
+                        castBoundsInited = true;
+                    }
+                    castWorldBounds.merge(*model->getWorldBounds());
+                    shadowObjects.emplace_back(genRenderObject(model, camera));
+                }
+            }
+        }
+    }
+
+    pipeline->getSphere()->define(castWorldBounds);
+
+    pipeline->setShadowObjects(shadowObjects);
+}
+
 void sceneCulling(ForwardPipeline *pipeline, RenderView *view) {
+    const auto camera = view->getCamera();
+    const auto shadows = pipeline->getShadows();
+    const auto skyBox = pipeline->getSkybox();
+    const auto scene = camera->getScene();
+
+    const Light *mainLight = nullptr;
+    if (scene->mainLightID) mainLight = scene->getMainLight();
+    RenderObjectList renderObjects;
+
+    if (skyBox->enabled && skyBox->modelID && (camera->clearFlag & SKYBOX_FLAG)) {
+        renderObjects.emplace_back(genRenderObject(skyBox->getModel(), camera));
+    }
+
+    const auto models = scene->getModels();
+    const auto modelCount = models[0];
+    for (size_t i = 1; i <= modelCount; i++) {
+        const auto model = scene->getModelView(models[i]);
+
+        // filter model by view visibility
+        if (model->enabled) {
+            const auto visibility = view->getVisibility();
+            const auto vis = visibility & static_cast<uint>(LayerList::UI_2D);
+            const auto node = model->getNode();
+            if (vis) {
+                if ((model->nodeID && (visibility == node->layer)) ||
+                    visibility == model->visFlags) {
+                    renderObjects.emplace_back(genRenderObject(model, camera));
+                }
+            } else {
+                if ((model->nodeID && ((visibility & node->layer) == node->layer)) ||
+                    (visibility & model->visFlags)) {
+
+                    // frustum culling
+                    if ((model->worldBoundsID) && !aabb_frustum(model->getWorldBounds(), camera->getFrustum())) {
+                        continue;
+                    }
+
+                    renderObjects.emplace_back(genRenderObject(model, camera));
+                }
+            }
+        }
+    }
+
+    pipeline->setRenderObjects(renderObjects);
+}
+
+void sceneCulling(DeferredPipeline *pipeline, RenderView *view) {
     const auto camera = view->getCamera();
     const auto shadows = pipeline->getShadows();
     const auto skyBox = pipeline->getSkybox();

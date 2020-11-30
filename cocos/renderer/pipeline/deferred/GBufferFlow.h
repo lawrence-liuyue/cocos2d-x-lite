@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../RenderFlow.h"
-#include "../../core/gfx/GfxRenderPass.h"
+#include "gfx/GFXRenderPass.h"
 
 namespace cc {
 namespace pipeline {

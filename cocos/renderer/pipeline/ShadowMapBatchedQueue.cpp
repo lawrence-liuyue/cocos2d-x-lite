@@ -8,7 +8,7 @@
 #include "RenderInstancedQueue.h"
 #include "ShadowMapBatchedQueue.h"
 #include "forward/ForwardPipeline.h"
-#include "forward/SceneCulling.h"
+#include "SceneCulling.h"
 #include "gfx/GFXCommandBuffer.h"
 #include "gfx/GFXDescriptorSet.h"
 #include "gfx/GFXDevice.h"

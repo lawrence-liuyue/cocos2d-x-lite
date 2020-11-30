@@ -2,7 +2,7 @@
 #include "UIFlow.h"
 #include "../Define.h"
 #include "../forward/ForwardPipeline.h"
-#include "../forward/SceneCulling.h"
+#include "../SceneCulling.h"
 #include "UIStage.h"
 
 namespace cc {

@@ -10,7 +10,7 @@
 #include "gfx/GFXFramebuffer.h"
 #include "gfx/GFXRenderPass.h"
 #include "gfx/GFXTexture.h"
-#include "../forward/SceneCulling.h"
+#include "../SceneCulling.h"
 
 namespace cc {
 namespace pipeline {
